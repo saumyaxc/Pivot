@@ -23,6 +23,7 @@ The application is designed around two user experiences:
 
 The feature list below describes Pivot's product scope. Some flows are still
 under development and may be represented by a local prototype in the app.
+The current prototype has five tabs: Home, Messages, Sell, Cart, and Profile.
 
 ### Buyer
 
@@ -35,6 +36,7 @@ under development and may be represented by a local prototype in the app.
 - Purchase resale items
 - Make offers on listings
 - Message sellers
+- Send a local bid from a listing card and view the conversation in Messages
 - Track orders
 - Earn rewards points
 - Rate purchased items
@@ -42,10 +44,11 @@ under development and may be represented by a local prototype in the app.
 ### Seller
 
 - Create clothing listings
-- Upload item photos
+- Take item photos with the camera or choose them from the photo library
 - Select item categories
-- Add brand, size, and condition
+- Add description, brand, size, color, material, and condition
 - Add original and selling prices
+- View listings on Profile and mark them open or sold
 - Receive suggested pricing based on similar listings
 - Receive warnings when an item may be overpriced
 - Publish listings to the marketplace
@@ -64,9 +67,13 @@ Pivot uses a warm, natural color palette inspired by fashion and sustainability.
 
 | Name | Hex |
 | --- | --- |
-| Warm Beige | `#CF9B7A` |
+| Warm Beige | `#E3C3AF` |
 | Forest Green | `#4F6B56` |
 | Orange | `#C95B0C` |
+
+Listing submissions, bids, and messages are local prototype interactions; they
+are not synced to other accounts or a backend, and reset when the app session
+restarts.
 
 ### Typography
 

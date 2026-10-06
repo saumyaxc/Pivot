@@ -1,9 +1,9 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { BrandMark, palette } from '@/components/pivot-ui';
+import { BrandMark, LeafIcon, palette } from '@/components/pivot-ui';
 import { useShop } from '@/state/shop-store';
 
 const profileLinks = [
@@ -15,7 +15,7 @@ const profileLinks = [
 
 export default function ProfileScreen() {
   const [activeLink, setActiveLink] = useState<string | null>(null);
-  const { bagCount, savedIds } = useShop();
+  const { bagCount, savedIds, followedBrands, followedSellers, listings, setListingStatus } = useShop();
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -37,7 +37,7 @@ export default function ProfileScreen() {
             <Text style={styles.memberName}>Your next chapter.</Text>
             <Text style={styles.memberSub}>A lighter closet starts here.</Text>
           </View>
-          <Text style={styles.profileFlower}>✳</Text>
+          <LeafIcon color={palette.beige} size={84} opacity={0.25} style={styles.profileFlower} />
         </View>
 
         <View style={styles.stats}>
@@ -58,6 +58,76 @@ export default function ProfileScreen() {
         </View>
 
         <Text style={styles.sectionTitle}>Your corner of Pivot</Text>
+        <View style={styles.followingCard}>
+          <Text style={styles.followingTitle}>Your people & brands</Text>
+          <Text style={styles.followingBody}>
+            {followedBrands.length} brands · {followedSellers.length} sellers
+          </Text>
+          <Text style={styles.followingNames}>
+            {[...followedBrands, ...followedSellers].join(' · ')}
+          </Text>
+        </View>
+        <View style={styles.listingsHeading}>
+          <Text style={styles.sectionTitle}>My Listings</Text>
+          <Text style={styles.listingCount}>{listings.length} {listings.length === 1 ? 'piece' : 'pieces'}</Text>
+        </View>
+        {listings.length === 0 ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.navigate('/(tabs)/sell')}
+            style={styles.emptyListings}>
+            <Text style={styles.emptyListingIcon}>＋</Text>
+            <Text style={styles.emptyListingTitle}>Your next listing starts here</Text>
+            <Text style={styles.emptyListingBody}>Add a piece to your closet and keep track of it here.</Text>
+            <Text style={styles.emptyListingAction}>Create a listing →</Text>
+          </Pressable>
+        ) : (
+          <View style={styles.myListings}>
+            {listings.map((listing) => (
+              <View key={listing.id} style={styles.listingCard}>
+                <Image source={{ uri: listing.image }} style={styles.listingImage} />
+                <View style={styles.listingInfo}>
+                  <Text numberOfLines={1} style={styles.listingBrand}>{listing.brand}</Text>
+                  <Text numberOfLines={2} style={styles.listingName}>{listing.name}</Text>
+                  <Text style={styles.listingMeta}>
+                    {listing.category} · {listing.sizes.join(', ')} · ${listing.price}
+                  </Text>
+                  {listing.photos && listing.photos.length > 1 && (
+                    <View style={styles.listingThumbnails}>
+                      {listing.photos.slice(1).map((uri, index) => (
+                        <Image
+                          key={`${listing.id}-photo-${index}`}
+                          source={{ uri }}
+                          style={styles.listingThumbnail}
+                        />
+                      ))}
+                    </View>
+                  )}
+                  <View style={styles.listingStatusRow}>
+                    <Text style={[
+                      styles.listingStatus,
+                      listing.listingStatus === 'sold' && styles.soldStatus,
+                    ]}>
+                      {listing.listingStatus === 'sold' ? 'SOLD' : 'OPEN'}
+                    </Text>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={listing.listingStatus === 'sold' ? `Reopen ${listing.name}` : `Mark ${listing.name} as sold`}
+                      onPress={() => setListingStatus(
+                        listing.id,
+                        listing.listingStatus === 'sold' ? 'open' : 'sold',
+                      )}
+                      style={styles.manageListing}>
+                      <Text style={styles.manageListingText}>
+                        {listing.listingStatus === 'sold' ? 'Reopen' : 'Mark sold'}
+                      </Text>
+                    </Pressable>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
         <View style={styles.linkGroup}>
           {profileLinks.map(([title, description, icon]) => (
             <Pressable
@@ -65,7 +135,13 @@ export default function ProfileScreen() {
               key={title}
               onPress={() => setActiveLink(title)}
               style={styles.linkRow}>
-              <View style={styles.linkIcon}><Text style={styles.linkIconText}>{title === 'Impact so far' ? '✳' : '◦'}</Text></View>
+              <View style={styles.linkIcon}>
+                {title === 'Impact so far' ? (
+                  <LeafIcon color={palette.olive} size={20} />
+                ) : (
+                  <Text style={styles.linkIconText}>◦</Text>
+                )}
+              </View>
               <View style={styles.linkCopy}>
                 <Text style={styles.linkTitle}>{title}</Text>
                 <Text style={styles.linkDescription}>{description}</Text>
@@ -105,22 +181,47 @@ const styles = StyleSheet.create({
   settings: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 22, backgroundColor: palette.cream },
   settingsText: { color: palette.oliveDark, fontSize: 18 },
   profileCard: { position: 'relative', minHeight: 136, overflow: 'hidden', flexDirection: 'row', alignItems: 'center', gap: 15, padding: 18, borderRadius: 18, backgroundColor: palette.oliveDark },
-  avatar: { width: 57, height: 57, alignItems: 'center', justifyContent: 'center', borderRadius: 30, backgroundColor: '#E2D6BC' },
+  avatar: { width: 57, height: 57, alignItems: 'center', justifyContent: 'center', borderRadius: 30, backgroundColor: palette.beige },
   avatarText: { color: palette.oliveDark, fontSize: 21, fontWeight: '700' },
   profileInfo: { zIndex: 1 },
-  memberLabel: { color: '#D5DEC9', fontSize: 8, fontWeight: '700', letterSpacing: 1.2 },
+  memberLabel: { color: palette.beige, fontSize: 8, fontWeight: '700', letterSpacing: 1.2 },
   memberName: { marginTop: 5, color: palette.paper, fontSize: 19, fontWeight: '700', letterSpacing: -0.4 },
-  memberSub: { marginTop: 4, color: '#D5D8CE', fontSize: 11 },
+  memberSub: { marginTop: 4, color: palette.beige, fontSize: 11 },
   profileFlower: { position: 'absolute', right: 17, top: 4, color: 'rgba(226,214,188,0.25)', fontSize: 84 },
   stats: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 17, paddingHorizontal: 10, borderRadius: 16, backgroundColor: palette.cream },
   stat: { flex: 1, alignItems: 'center' },
   statValue: { color: palette.oliveDark, fontSize: 20, fontWeight: '700' },
   statLabel: { marginTop: 3, color: palette.muted, fontSize: 9 },
-  statDivider: { width: 1, height: 28, backgroundColor: '#DCD9CE' },
+  statDivider: { width: 1, height: 28, backgroundColor: palette.beige },
   sectionTitle: { color: palette.ink, fontSize: 18, fontWeight: '700' },
+  followingCard: { gap: 5, padding: 14, borderRadius: 14, backgroundColor: palette.cream },
+  followingTitle: { color: palette.olive, fontSize: 12, fontWeight: '700' },
+  followingBody: { color: palette.terracotta, fontSize: 10, fontWeight: '600' },
+  followingNames: { color: palette.olive, fontSize: 10, lineHeight: 15 },
+  listingsHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  listingCount: { color: palette.terracotta, fontSize: 10, fontWeight: '700' },
+  emptyListings: { alignItems: 'center', paddingHorizontal: 18, paddingVertical: 23, borderRadius: 16, backgroundColor: palette.cream },
+  emptyListingIcon: { color: palette.terracotta, fontSize: 25 },
+  emptyListingTitle: { marginTop: 6, color: palette.ink, fontSize: 13, fontWeight: '700' },
+  emptyListingBody: { marginTop: 5, color: palette.olive, fontSize: 10, textAlign: 'center' },
+  emptyListingAction: { marginTop: 10, color: palette.terracotta, fontSize: 11, fontWeight: '700' },
+  myListings: { gap: 10 },
+  listingCard: { flexDirection: 'row', gap: 12, padding: 10, borderRadius: 15, borderWidth: 1, borderColor: palette.line, backgroundColor: palette.paper },
+  listingImage: { width: 83, height: 100, borderRadius: 11, backgroundColor: palette.cream },
+  listingInfo: { flex: 1, justifyContent: 'center' },
+  listingBrand: { color: palette.terracotta, fontSize: 9, fontWeight: '700', textTransform: 'uppercase' },
+  listingName: { marginTop: 3, color: palette.ink, fontSize: 12, fontWeight: '700' },
+  listingMeta: { marginTop: 4, color: palette.olive, fontSize: 9 },
+  listingThumbnails: { flexDirection: 'row', gap: 4, marginTop: 5 },
+  listingThumbnail: { width: 23, height: 23, borderRadius: 5, backgroundColor: palette.cream },
+  listingStatusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 9 },
+  listingStatus: { color: palette.olive, fontSize: 9, fontWeight: '800', letterSpacing: 0.7 },
+  soldStatus: { color: palette.terracotta },
+  manageListing: { paddingHorizontal: 9, paddingVertical: 6, borderRadius: 9, backgroundColor: palette.cream },
+  manageListingText: { color: palette.terracotta, fontSize: 9, fontWeight: '700' },
   linkGroup: { overflow: 'hidden', borderRadius: 16, borderWidth: 1, borderColor: palette.line },
   linkRow: { minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 13, borderBottomWidth: 1, borderBottomColor: palette.line },
-  linkIcon: { width: 37, height: 37, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: '#EDF0E8' },
+  linkIcon: { width: 37, height: 37, alignItems: 'center', justifyContent: 'center', borderRadius: 12, backgroundColor: palette.cream },
   linkIconText: { color: palette.olive, fontSize: 22 },
   linkCopy: { flex: 1 },
   linkTitle: { color: palette.ink, fontSize: 12, fontWeight: '700' },
@@ -132,5 +233,5 @@ const styles = StyleSheet.create({
   dismiss: { alignSelf: 'flex-end', marginTop: 9, color: palette.olive, fontSize: 12, fontWeight: '700' },
   logout: { alignItems: 'center', padding: 13 },
   logoutText: { color: palette.olive, fontSize: 11, fontWeight: '700' },
-  version: { color: '#A0A098', fontSize: 9, textAlign: 'center' },
+  version: { color: palette.olive, fontSize: 9, textAlign: 'center' },
 });

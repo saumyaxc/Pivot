@@ -1,4 +1,6 @@
 import { router } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
+import { useState } from 'react';
 import {
   Image,
   Pressable,
@@ -14,16 +16,40 @@ import type { Product } from '@/constants/products';
 import { useShop } from '@/state/shop-store';
 
 export const palette = {
-  ink: '#20241E',
-  muted: '#777C73',
-  olive: '#53634C',
-  oliveDark: '#394735',
-  sage: '#E4E9DF',
-  cream: '#F6F3EB',
-  paper: '#FFFEFA',
-  line: '#E8E6DE',
-  terracotta: '#B66D51',
+  ink: '#4F6B56',
+  muted: '#4F6B56',
+  olive: '#4F6B56',
+  oliveDark: '#4F6B56',
+  sage: '#E3C3AF',
+  cream: '#E3C3AF',
+  paper: '#FFFCF9',
+  line: '#E3C3AF',
+  terracotta: '#C95B0C',
+  beige: '#E3C3AF',
 };
+
+export function LeafIcon({
+  color = palette.olive,
+  size = 18,
+  opacity = 1,
+  style,
+}: {
+  color?: string;
+  size?: number;
+  opacity?: number;
+  style?: import('react-native').StyleProp<import('react-native').ViewStyle>;
+}) {
+  return (
+    <SymbolView
+      name={{ ios: 'leaf.fill', android: 'eco', web: 'eco' }}
+      size={size}
+      tintColor={color}
+      weight="medium"
+      style={[style, { opacity }]}
+      accessible={false}
+    />
+  );
+}
 
 export function BrandMark({ light = false }: { light?: boolean }) {
   return (
@@ -93,12 +119,14 @@ export function SearchField({
   value,
   onChangeText,
   placeholder = 'Search pre-loved pieces',
-}: Pick<TextInputProps, 'value' | 'onChangeText' | 'placeholder'>) {
+  autoFocus = false,
+}: Pick<TextInputProps, 'value' | 'onChangeText' | 'placeholder' | 'autoFocus'>) {
   return (
     <View style={styles.searchField}>
       <Text style={styles.searchIcon}>⌕</Text>
       <TextInput
         accessibilityLabel="Search"
+        autoFocus={autoFocus}
         placeholder={placeholder}
         placeholderTextColor={palette.muted}
         value={value}
@@ -112,7 +140,10 @@ export function SearchField({
 }
 
 export function ProductCard({ product }: { product: Product }) {
-  const { savedIds, toggleSaved } = useShop();
+  const { savedIds, toggleSaved, sendBid } = useShop();
+  const [bidOpen, setBidOpen] = useState(false);
+  const [bid, setBid] = useState('');
+  const [bidSent, setBidSent] = useState(false);
   const isSaved = savedIds.includes(product.id);
 
   return (
@@ -133,13 +164,56 @@ export function ProductCard({ product }: { product: Product }) {
         </Text>
         <View style={styles.priceRow}>
           <Text style={styles.productPrice}>${product.price}</Text>
-          <Text style={styles.originalPrice}>${product.originalPrice}</Text>
+          {product.originalPrice !== undefined && (
+            <Text style={styles.originalPrice}>${product.originalPrice}</Text>
+          )}
         </View>
-        <View style={styles.scoreRow}>
-          <Text style={styles.leaf}>✳</Text>
-          <Text style={styles.scoreText}>{product.sustainability} sustainability score</Text>
-        </View>
+        {product.sustainability !== undefined && (
+          <View style={styles.scoreRow}>
+            <LeafIcon color={palette.olive} size={12} />
+            <Text style={styles.scoreText}>{product.sustainability} sustainability score</Text>
+          </View>
+        )}
       </Pressable>
+      <View style={styles.bidActions}>
+        {bidSent ? (
+          <Text style={styles.bidSent}>Bid sent to {product.seller}</Text>
+        ) : bidOpen ? (
+          <View style={styles.bidForm}>
+            <TextInput
+              accessibilityLabel={`Bid amount for ${product.name}`}
+              keyboardType="decimal-pad"
+              placeholder="Your bid ($)"
+              placeholderTextColor={palette.olive}
+              value={bid}
+              onChangeText={setBid}
+              style={styles.bidInput}
+            />
+            <Pressable
+              accessibilityRole="button"
+              disabled={!bid.trim() || Number(bid) <= 0}
+              onPress={() => {
+                sendBid(product, Number(bid));
+                setBidSent(true);
+                setBidOpen(false);
+              }}
+              style={({ pressed }) => [
+                styles.bidSend,
+                (!bid.trim() || Number(bid) <= 0) && styles.bidDisabled,
+                pressed && styles.pressed,
+              ]}>
+              <Text style={styles.bidSendText}>Send</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setBidOpen(true)}
+            style={({ pressed }) => [styles.makeBid, pressed && styles.pressed]}>
+            <Text style={styles.makeBidText}>Make bid</Text>
+          </Pressable>
+        )}
+      </View>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={isSaved ? `Remove ${product.name} from saved` : `Save ${product.name}`}
@@ -204,13 +278,13 @@ const styles = StyleSheet.create({
     color: palette.paper,
   },
   eyebrow: {
-    color: palette.olive,
+    color: palette.terracotta,
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 1.5,
   },
   lightText: {
-    color: '#E2E8D9',
+    color: palette.beige,
   },
   pill: {
     paddingHorizontal: 16,
@@ -266,7 +340,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 14,
     borderRadius: 14,
-    backgroundColor: '#F0EFE9',
+    backgroundColor: palette.cream,
   },
   searchIcon: {
     color: palette.olive,
@@ -279,8 +353,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     paddingVertical: 0,
   },
-  searchTune: {
+  searchPrompt: {
+    flex: 1,
     color: palette.olive,
+    fontSize: 14,
+  },
+  searchTune: {
+    color: palette.terracotta,
     fontSize: 20,
   },
   productGrid: {
@@ -300,7 +379,7 @@ const styles = StyleSheet.create({
     aspectRatio: 0.77,
     overflow: 'hidden',
     borderRadius: 15,
-    backgroundColor: '#E9E6DE',
+    backgroundColor: palette.cream,
     marginBottom: 10,
   },
   productImage: {
@@ -375,14 +454,60 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 5,
   },
-  leaf: {
-    color: palette.olive,
-    fontSize: 12,
-  },
   scoreText: {
     color: palette.olive,
     fontSize: 10,
     fontWeight: '600',
+  },
+  bidActions: {
+    marginTop: 9,
+  },
+  makeBid: {
+    minHeight: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 10,
+    backgroundColor: palette.cream,
+  },
+  makeBidText: {
+    color: palette.terracotta,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  bidForm: {
+    flexDirection: 'row',
+    gap: 5,
+  },
+  bidInput: {
+    flex: 1,
+    minWidth: 0,
+    height: 34,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: palette.beige,
+    borderRadius: 9,
+    color: palette.olive,
+    fontSize: 11,
+  },
+  bidSend: {
+    paddingHorizontal: 10,
+    justifyContent: 'center',
+    borderRadius: 9,
+    backgroundColor: palette.olive,
+  },
+  bidSendText: {
+    color: palette.paper,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  bidDisabled: {
+    opacity: 0.45,
+  },
+  bidSent: {
+    color: palette.olive,
+    fontSize: 10,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   emptyProducts: {
     alignItems: 'center',
@@ -423,3 +548,17 @@ const styles = StyleSheet.create({
     fontSize: 19,
   },
 });
+
+export function SearchBarButton({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Search items and open filters"
+      onPress={onPress}
+      style={({ pressed }) => [styles.searchField, pressed && styles.pressed]}>
+      <Text style={styles.searchIcon}>⌕</Text>
+      <Text style={styles.searchPrompt}>Search items, brands, styles</Text>
+      <Text style={styles.searchTune}>☷</Text>
+    </Pressable>
+  );
+}

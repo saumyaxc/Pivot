@@ -11,14 +11,23 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ActionButton, IconButton, palette } from '@/components/pivot-ui';
+import { ActionButton, IconButton, LeafIcon, palette } from '@/components/pivot-ui';
 import { getProduct } from '@/constants/products';
 import { useShop } from '@/state/shop-store';
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const product = getProduct(id);
-  const { savedIds, toggleSaved, addToBag } = useShop();
+  const {
+    savedIds,
+    toggleSaved,
+    addToBag,
+    followedBrands,
+    followedSellers,
+    toggleFollowBrand,
+    toggleFollowSeller,
+    sendBid,
+  } = useShop();
   const [offerOpen, setOfferOpen] = useState(false);
   const [offer, setOffer] = useState('');
   const [message, setMessage] = useState('');
@@ -39,6 +48,7 @@ export default function ProductDetailScreen() {
     addToBag(product.id);
     setMessage('A lovely choice. This piece is in your bag.');
   };
+  const originalPrice = product.originalPrice ?? product.price;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
@@ -54,7 +64,10 @@ export default function ProductDetailScreen() {
             </IconButton>
           </View>
           <View style={styles.condition}>
-            <Text style={styles.conditionText}>✳  {product.condition.toUpperCase()}</Text>
+            <View style={styles.conditionContent}>
+              <LeafIcon color={palette.olive} size={12} />
+              <Text style={styles.conditionText}>{product.condition.toUpperCase()}</Text>
+            </View>
           </View>
         </View>
 
@@ -66,12 +79,16 @@ export default function ProductDetailScreen() {
           <Text style={styles.name}>{product.name}</Text>
           <View style={styles.priceRow}>
             <Text style={styles.price}>${product.price}</Text>
-            <Text style={styles.original}>${product.originalPrice} new</Text>
-            <View style={styles.saving}>
-              <Text style={styles.savingText}>
-                {Math.round((1 - product.price / product.originalPrice) * 100)}% less
-              </Text>
-            </View>
+            {product.originalPrice !== undefined && (
+              <>
+                <Text style={styles.original}>${originalPrice} new</Text>
+                <View style={styles.saving}>
+                  <Text style={styles.savingText}>
+                    {Math.round((1 - product.price / originalPrice) * 100)}% less
+                  </Text>
+                </View>
+              </>
+            )}
           </View>
 
           <View style={styles.rule} />
@@ -83,26 +100,50 @@ export default function ProductDetailScreen() {
             </View>
             <Text style={styles.sellerArrow}>›</Text>
           </View>
-
-          <View style={styles.impactCard}>
-            <View style={styles.scoreCircle}>
-              <Text style={styles.scoreValue}>{product.sustainability}</Text>
-              <Text style={styles.scoreSmall}>SCORE</Text>
-            </View>
-            <View style={styles.impactCopy}>
-              <Text style={styles.impactTitle}>A good choice, made better.</Text>
-              <Text style={styles.impactText}>
-                This pre-loved piece has a {product.sustainability}/100 sustainability score.
-                Giving it another life helps reduce fashion waste.
+          <View style={styles.followActions}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => toggleFollowBrand(product.brand)}
+              style={styles.followButton}>
+              <Text style={styles.followText}>
+                {followedBrands.includes(product.brand) ? '✓ Following' : `+ Follow ${product.brand}`}
               </Text>
-            </View>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => toggleFollowSeller(product.seller)}
+              style={styles.followButton}>
+              <Text style={styles.followText}>
+                {followedSellers.includes(product.seller)
+                  ? '✓ Following seller'
+                  : `+ Follow ${product.seller}`}
+              </Text>
+            </Pressable>
           </View>
+
+          {product.sustainability !== undefined && (
+            <View style={styles.impactCard}>
+              <View style={styles.scoreCircle}>
+                <Text style={styles.scoreValue}>{product.sustainability}</Text>
+                <Text style={styles.scoreSmall}>SCORE</Text>
+              </View>
+              <View style={styles.impactCopy}>
+                <Text style={styles.impactTitle}>A good choice, made better.</Text>
+                <Text style={styles.impactText}>
+                  This pre-loved piece has a {product.sustainability}/100 sustainability score.
+                  Giving it another life helps reduce fashion waste.
+                </Text>
+              </View>
+            </View>
+          )}
 
           <Text style={styles.sectionTitle}>The details</Text>
           <View style={styles.detailList}>
             <DetailRow label="Condition" value={product.condition} />
-            <DetailRow label="Size" value="M · Fits true to size" />
-            <DetailRow label="Materials" value="Natural, long-wearing fibers" />
+            <DetailRow label="Size" value={`${product.sizes.join(', ')} · Fits true to size`} />
+            <DetailRow label="Color" value={product.colors.join(', ')} />
+            <DetailRow label="Materials" value={product.material ?? 'Natural, long-wearing fibers'} />
+            {product.description && <DetailRow label="Description" value={product.description} />}
             <DetailRow label="Seller" value={product.seller} />
           </View>
 
@@ -126,8 +167,10 @@ export default function ProductDetailScreen() {
                 label="Send offer"
                 disabled={!offer.trim() || Number(offer) <= 0}
                 onPress={() => {
+                  sendBid(product, Number(offer));
                   setOfferOpen(false);
-                  setMessage(`Your $${offer} offer is ready for ${product.seller}.`);
+                  setMessage(`Your $${Number(offer).toFixed(2)} offer was sent to ${product.seller}.`);
+                  setOffer('');
                 }}
               />
             </View>
@@ -167,10 +210,11 @@ const styles = StyleSheet.create({
   unavailable: { flex: 1, justifyContent: 'center', paddingHorizontal: 24, gap: 12 },
   unavailableTitle: { color: palette.ink, fontSize: 23, fontWeight: '700', textAlign: 'center' },
   unavailableBody: { color: palette.muted, fontSize: 14, textAlign: 'center' },
-  imageWrap: { position: 'relative', width: '100%', aspectRatio: 0.91, backgroundColor: '#E9E6DE' },
+  imageWrap: { position: 'relative', width: '100%', aspectRatio: 0.91, backgroundColor: palette.cream },
   image: { width: '100%', height: '100%' },
   topActions: { position: 'absolute', top: 8, left: 17, right: 17, flexDirection: 'row', justifyContent: 'space-between' },
   condition: { position: 'absolute', left: 18, bottom: 15, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: 'rgba(255,254,250,0.94)' },
+  conditionContent: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   conditionText: { color: palette.oliveDark, fontSize: 9, fontWeight: '700', letterSpacing: 0.7 },
   details: { paddingHorizontal: 20, paddingTop: 20 },
   brandRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
@@ -180,23 +224,26 @@ const styles = StyleSheet.create({
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 7 },
   price: { color: palette.ink, fontSize: 20, fontWeight: '700' },
   original: { color: palette.muted, fontSize: 12, textDecorationLine: 'line-through' },
-  saving: { paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8, backgroundColor: '#E9EDE4' },
+  saving: { paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8, backgroundColor: palette.cream },
   savingText: { color: palette.olive, fontSize: 10, fontWeight: '700' },
   rule: { height: 1, marginVertical: 17, backgroundColor: palette.line },
   sellerRow: { flexDirection: 'row', alignItems: 'center', gap: 11 },
-  sellerAvatar: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 22, backgroundColor: '#E5D7C3' },
+  sellerAvatar: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 22, backgroundColor: palette.beige },
   sellerInitial: { color: palette.oliveDark, fontSize: 16, fontWeight: '700' },
   sellerCopy: { flex: 1 },
   sellerTitle: { color: palette.ink, fontSize: 11, fontWeight: '700' },
   sellerSub: { marginTop: 4, color: palette.muted, fontSize: 9 },
   sellerArrow: { color: palette.muted, fontSize: 23 },
-  impactCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 19, padding: 14, borderRadius: 16, backgroundColor: '#EDF0E8' },
-  scoreCircle: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center', borderRadius: 30, borderWidth: 1, borderColor: '#AEB9A4' },
+  followActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 },
+  followButton: { paddingHorizontal: 10, paddingVertical: 7, borderRadius: 12, backgroundColor: palette.cream },
+  followText: { color: palette.olive, fontSize: 10, fontWeight: '700' },
+  impactCard: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 19, padding: 14, borderRadius: 16, backgroundColor: palette.cream },
+  scoreCircle: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center', borderRadius: 30, borderWidth: 1, borderColor: palette.olive },
   scoreValue: { color: palette.oliveDark, fontSize: 17, fontWeight: '700', lineHeight: 19 },
   scoreSmall: { color: palette.olive, fontSize: 6, fontWeight: '700', letterSpacing: 0.8 },
   impactCopy: { flex: 1 },
   impactTitle: { color: palette.oliveDark, fontSize: 11, fontWeight: '700' },
-  impactText: { marginTop: 4, color: '#697365', fontSize: 10, lineHeight: 15 },
+  impactText: { marginTop: 4, color: palette.olive, fontSize: 10, lineHeight: 15 },
   sectionTitle: { marginTop: 20, marginBottom: 9, color: palette.ink, fontSize: 16, fontWeight: '700' },
   detailList: { paddingHorizontal: 13, borderRadius: 14, borderWidth: 1, borderColor: palette.line },
   detailRow: { minHeight: 40, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: palette.line },

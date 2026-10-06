@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ActionButton, BrandMark, Eyebrow, IconButton, Pill, palette } from '@/components/pivot-ui';
+import { ActionButton, BrandMark, Eyebrow, IconButton, LeafIcon, Pill, palette } from '@/components/pivot-ui';
 import { useShop } from '@/state/shop-store';
 
 const styleOptions = ['Minimal', 'Vintage', 'Soft & natural', 'Streetwear', 'Classic', 'Playful'];
@@ -43,7 +43,7 @@ export default function WelcomeScreen() {
             </View>
             <View style={screen.heroStamp}>
               <Text style={screen.stampText}>GIVE GOOD{'\n'}CLOTHES{'\n'}ANOTHER LIFE</Text>
-              <Text style={screen.stampFlower}>✳</Text>
+              <LeafIcon color={palette.beige} size={19} />
             </View>
             <View style={screen.heroTop}>
               <BrandMark light />
@@ -111,7 +111,7 @@ export default function WelcomeScreen() {
             />
           </View>
           <View style={screen.authNote}>
-            <Text style={screen.tipIcon}>✳</Text>
+            <LeafIcon color={palette.olive} size={17} />
             <Text style={screen.tipText}>
               No account or password is created in this visual prototype.
             </Text>
@@ -177,7 +177,7 @@ export default function WelcomeScreen() {
           </View>
 
           <View style={screen.setupTip}>
-            <Text style={screen.tipIcon}>✳</Text>
+            <LeafIcon color={palette.olive} size={17} />
             <Text style={screen.tipText}>No pressure—your preferences can always change.</Text>
           </View>
           <ActionButton
@@ -222,7 +222,7 @@ const screen = StyleSheet.create({
     alignItems: 'center',
   },
   topNote: {
-    color: '#D9DFD2',
+    color: palette.beige,
     fontSize: 9,
     fontWeight: '700',
     letterSpacing: 1.4,
@@ -261,7 +261,7 @@ const screen = StyleSheet.create({
     left: 5,
     right: 5,
     height: 2,
-    backgroundColor: '#D7CFB8',
+    backgroundColor: palette.beige,
     transform: [{ rotate: '-6deg' }],
   },
   hanger: {
@@ -272,7 +272,7 @@ const screen = StyleSheet.create({
     borderTopWidth: 1,
     borderLeftWidth: 1,
     borderRightWidth: 1,
-    borderColor: '#D7CFB8',
+    borderColor: palette.beige,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
   },
@@ -299,16 +299,11 @@ const screen = StyleSheet.create({
     transform: [{ rotate: '-8deg' }],
   },
   stampText: {
-    color: '#E6D9BC',
+    color: palette.beige,
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 2.4,
     lineHeight: 17,
-  },
-  stampFlower: {
-    color: '#E6D9BC',
-    fontSize: 19,
-    marginTop: 6,
   },
   welcomeContent: {
     flex: 1,
@@ -348,7 +343,7 @@ const screen = StyleSheet.create({
   },
   terms: {
     marginTop: 12,
-    color: '#92958E',
+    color: palette.olive,
     fontSize: 10,
     textAlign: 'center',
   },
@@ -447,10 +442,6 @@ const screen = StyleSheet.create({
     padding: 13,
     borderRadius: 12,
     backgroundColor: palette.cream,
-  },
-  tipIcon: {
-    color: palette.olive,
-    fontSize: 18,
   },
   tipText: {
     flex: 1,
