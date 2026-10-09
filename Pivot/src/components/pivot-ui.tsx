@@ -11,6 +11,7 @@ import {
   type TextInputProps,
   type ViewStyle,
 } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
 import type { Product } from '@/constants/products';
 import { useShop } from '@/state/shop-store';
@@ -26,6 +27,10 @@ export const palette = {
   line: '#E3C3AF',
   terracotta: '#C95B0C',
   beige: '#E3C3AF',
+  logoPeach: '#CF9B7A',
+  sand: '#E2DDD8',
+  stone: '#7C7870',
+  charcoal: '#1C1C1A',
 };
 
 export function LeafIcon({
@@ -56,6 +61,42 @@ export function BrandMark({ light = false }: { light?: boolean }) {
     <Text style={[styles.brand, light && styles.brandLight]}>
       pivot<Text style={[styles.brandDot, light && styles.brandLight]}>.</Text>
     </Text>
+  );
+}
+
+function PivotLayersIcon({ size }: { size: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+        stroke={palette.olive}
+        strokeWidth={2.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+export function PivotLogo({ light = false, compact = false }: { light?: boolean; compact?: boolean }) {
+  const markSize = compact ? 28 : 36;
+  const iconSize = compact ? 14 : 20;
+  const radius = compact ? 8 : 10;
+
+  return (
+    <View style={[styles.pivotLogoRow, compact && styles.pivotLogoRowCompact]}>
+      <View style={[styles.pivotLogoMark, { width: markSize, height: markSize, borderRadius: radius }]}>
+        <PivotLayersIcon size={iconSize} />
+      </View>
+      <Text
+        style={[
+          styles.pivotLogoText,
+          compact && styles.pivotLogoTextCompact,
+          light && styles.pivotLogoTextLight,
+        ]}>
+        Pivot
+      </Text>
+    </View>
   );
 }
 
@@ -275,6 +316,32 @@ const styles = StyleSheet.create({
     color: palette.terracotta,
   },
   brandLight: {
+    color: palette.paper,
+  },
+  pivotLogoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  pivotLogoRowCompact: {
+    gap: 8,
+  },
+  pivotLogoMark: {
+    backgroundColor: palette.logoPeach,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pivotLogoText: {
+    color: palette.olive,
+    fontSize: 22,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+  },
+  pivotLogoTextCompact: {
+    fontSize: 18,
+    letterSpacing: -0.4,
+  },
+  pivotLogoTextLight: {
     color: palette.paper,
   },
   eyebrow: {
