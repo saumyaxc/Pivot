@@ -139,14 +139,15 @@ Install Xcode and an iOS Simulator, start Expo with `npx expo start`, then press
 
 ```text
 Pivot/
-├── src/
-│   ├── app/
-│   ├── components/
-│   ├── constants/
-│   └── state/
-├── assets/
-├── package.json
-├── app.json
+├── Pivot/
+│   ├── src/
+│   │   ├── app/
+│   │   ├── components/
+│   │   ├── constants/
+│   │   └── state/
+│   ├── assets/
+│   ├── package.json
+│   └── app.json
 └── README.md
 ```
 
