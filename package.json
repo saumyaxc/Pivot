@@ -1,9 +1,0 @@
-{
-  "name": "Pivot",
-  "lockfileVersion": 3,
-  "requires": true,
-  "packages": {},
-  "dependencies": {
-    "expo": "^44.0.6"
-  }
-}
